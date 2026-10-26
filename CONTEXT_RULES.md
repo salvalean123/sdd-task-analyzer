@@ -47,6 +47,7 @@ Executado em todo Pull Request, nesta ordem:
 ### Checklist do revisor
 
 - [ ] `pytest` 100% passed
+- [ ] Pipeline de CI (GitHub Actions) verde no PR: jobs `test` e `docker`
 - [ ] Assinatura `analyze_tasks(tarefas: list[dict[str, Any]]) -> TaskAnalysis` igual à spec
 - [ ] Saída com as chaves da seção 1.4 da spec, sem chaves inventadas
 - [ ] Somente biblioteca padrão em `src/`
@@ -59,4 +60,14 @@ Executado em todo Pull Request, nesta ordem:
 
 - Branch `main` estável; trabalho em `feature/*`, integrado **somente via Pull Request** revisado.
 - Commits pequenos e descritivos, no padrão `tipo: descrição` (`feat:`, `test:`, `docs:`, `chore:`).
-- Tag de release ao fim de cada fase (`v0.2.0` = Fase 2).
+- Tag de release ao fim de cada fase (`v0.2.0` = Fase 2, `v0.3.0` = Fase 3).
+
+## 6. Infraestrutura e DevOps (Fase 3)
+
+1. Todo `push` e todo Pull Request para `main` ou `develop` disparam o pipeline `.github/workflows/ci.yml`.
+2. **Nenhum merge na `main` com pipeline vermelho.** O green build é pré-requisito da homologação humana, não substituto dela.
+3. A imagem Docker parte **somente** da imagem oficial `python:3.11-slim`. Proibido usar imagens de terceiros não verificadas.
+4. O container roda com usuário sem privilégios (sem `root`) e não guarda segredos, tokens ou chaves.
+5. Arquivos de infraestrutura (`Dockerfile`, `docker-compose.yml`, `ci.yml`) gerados por IA passam pelo mesmo checklist e revisão humana que o código.
+6. Nenhuma dependência nova entra em `requirements.txt` sem atualização da spec e aprovação humana.
+7. Mudanças na estrutura de pastas (§2.3) só com nova versão da spec e aprovação explícita do arquiteto (ver spec v1.2).
