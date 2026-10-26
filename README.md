@@ -1,11 +1,14 @@
 # sdd-task-analyzer
 
+[![CI](https://github.com/salvalean123/sdd-task-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/salvalean123/sdd-task-analyzer/actions/workflows/ci.yml)
+
 Módulo **TaskAnalyzer** desenvolvido com *Spec-Driven Development* (SDD).
 O código em `src/task_analyzer.py` foi gerado por assistente de IA a partir do contrato
 [`specs/task_analyzer_spec.md`](specs/task_analyzer_spec.md), sob as regras de
 [`CONTEXT_RULES.md`](CONTEXT_RULES.md), e homologado por revisão humana via Pull Request.
 
-> Bootcamp III, Fase 2: Implementação com IA, Test Harness e Versionamento no GitHub.
+> Bootcamp III, Fase 3: DevOps, Testes Automatizados, Containerização e Governança Ética de IA.
+> (Fase 2: Implementação com IA, Test Harness e Versionamento no GitHub.)
 > Autor: Mateus Salvato.
 
 ## Status do build
@@ -13,6 +16,8 @@ O código em `src/task_analyzer.py` foi gerado por assistente de IA a partir do 
 | Item | Status |
 |------|--------|
 | Test Harness (`pytest`) | ✅ 36 passed (100%) |
+| CI (GitHub Actions) | ✅ jobs `test` e `docker` a cada push/PR em `main` e `develop` |
+| Docker | `python:3.11-slim`, `docker compose run --rm tests` |
 | Python | 3.11+ |
 | Dependências de runtime | nenhuma (somente biblioteca padrão) |
 
@@ -20,19 +25,42 @@ O código em `src/task_analyzer.py` foi gerado por assistente de IA a partir do 
 
 ```
 sdd-task-analyzer/
-├── README.md                  # Visão geral, execução e status
-├── CONTEXT_RULES.md           # Regras de contexto para a IA
+├── .github/
+│   └── workflows/
+│       └── ci.yml                    # Motor CI/CD (GitHub Actions)
+├── Dockerfile                        # Empacotamento (python:3.11-slim)
+├── docker-compose.yml                # Orquestração dos testes
+├── CONTEXT_RULES.md                  # Base de governança (Fase 1)
 ├── specs/
-│   └── task_analyzer_spec.md  # Especificação SDD (Fase 1, v1.1)
+│   ├── system_design_document.pdf    # Especificação SDD (v1.2) em PDF
+│   ├── requirements.yaml             # Requisitos executáveis e rastreabilidade
+│   └── task_analyzer_spec.md         # Fonte editável da especificação
 ├── tests/
-│   └── test_harness.py        # Testes automatizados (pytest)
+│   └── test_harness.py               # Suíte de testes (Fase 2)
 ├── src/
-│   └── task_analyzer.py       # Código gerado por IA e homologado
-├── .gitignore                 # __pycache__, .pytest_cache, venv
-└── requirements.txt           # pytest
+│   └── task_analyzer.py              # Código gerado por IA e homologado
+├── requirements.txt                  # pytest
+└── README.md
 ```
 
 ## Como executar
+
+### Com Docker (recomendado)
+
+Um único comando, sem instalar Python na máquina:
+
+```bash
+docker compose run --rm tests
+```
+
+Ou, sem o Compose:
+
+```bash
+docker build -t sdd-task-analyzer .
+docker run --rm sdd-task-analyzer
+```
+
+### Localmente
 
 ```bash
 python -m venv venv
@@ -76,10 +104,22 @@ Entradas inválidas, como `data_conclusao` anterior a `data_criacao`, disparam
 | Casos de borda | lista vazia, só pendentes, pendente/cancelada fora da média, prioridade sem concluídas, prazo exato, conclusão imediata |
 | CONTEXT_RULES | type hints, docstrings e ausência de `print` |
 
+## Integração Contínua
+
+O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda em todo `push` e
+Pull Request para `main` e `develop`:
+
+1. **`test`**: `ubuntu-latest` + Python 3.11, `pip install -r requirements.txt`,
+   `pytest tests/test_harness.py -v`.
+2. **`docker`**: build da imagem e execução da suíte dentro do container.
+
+Nenhum PR é mesclado na `main` sem os dois jobs verdes (CONTEXT_RULES §6).
+
 ## Fluxo Git
 
 - `main`: ramo estável; recebe código **apenas via Pull Request**.
 - `feature/sdd-specification`: spec e CONTEXT_RULES.
 - `feature/task-analyzer-impl`: código gerado via IA.
 - `feature/test-harness`: suíte pytest.
-- Tag `v0.2.0` marca a entrega da Fase 2.
+- `feature/devops-ci-docker`: CI, Docker e governança (Fase 3).
+- Tags `v0.2.0` (Fase 2) e `v0.3.0` (Fase 3).
