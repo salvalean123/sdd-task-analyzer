@@ -1,8 +1,8 @@
 # Especificação SDD: TaskAnalyzer
 
-**Bootcamp III**, autor: Mateus Salvato
-Fase 1: Especificação Técnica e Governança de Contexto (SDD & AI Harness)
-Versão: **1.1** (transposta do Google Docs da Fase 1 e conciliada com o enunciado da Fase 2; ver seção 5)
+**Bootcamp III**, autor: Mateus Salvato  
+Fase 1: Especificação Técnica e Governança de Contexto (SDD & AI Harness)  
+Versão: **1.2** (transposta do Google Docs da Fase 1, conciliada com o enunciado da Fase 2 e ampliada com a infraestrutura da Fase 3; ver seção 6)
 
 > A especificação é o contrato. A IA é a executora. O desenvolvedor é o arquiteto e o homologador.
 
@@ -121,21 +121,52 @@ Há no mínimo um teste automatizado por cenário.
 
 ```
 sdd-task-analyzer/
-├── README.md
-├── CONTEXT_RULES.md
+├── .github/
+│   └── workflows/
+│       └── ci.yml                    # Motor CI/CD (GitHub Actions)
+├── Dockerfile                        # Empacotamento (python:3.11-slim)
+├── docker-compose.yml                # Orquestração local dos testes
+├── .dockerignore
+├── CONTEXT_RULES.md                  # Base de governança (Fase 1)
 ├── specs/
-│   └── task_analyzer_spec.md
+│   ├── system_design_document.pdf    # Esta especificação em PDF
+│   ├── requirements.yaml             # Requisitos executáveis e rastreabilidade
+│   └── task_analyzer_spec.md         # Fonte editável desta especificação
 ├── tests/
-│   └── test_harness.py
+│   └── test_harness.py               # Suíte de testes (Fase 2)
 ├── src/
-│   └── task_analyzer.py
+│   └── task_analyzer.py              # Código gerado por IA e homologado (Fase 2)
 ├── .gitignore
-└── requirements.txt
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## 5. Histórico de versões
+## 5. Infraestrutura e Entrega Contínua (Fase 3)
+
+### 5.1 Pipeline de CI (`.github/workflows/ci.yml`)
+- **Gatilhos:** `push` e `pull_request` nas branches `main` e `develop`.
+- **Ambiente:** `ubuntu-latest` com Python 3.11.
+- **Preparação:** `pip install -r requirements.txt`.
+- **Execução:** `pytest tests/test_harness.py -v`.
+- **Job extra:** build da imagem Docker e execução da suíte dentro do container.
+- Um PR só pode ser mesclado na `main` com o pipeline verde (*green build*).
+
+### 5.2 Containerização
+- `Dockerfile`: imagem base `python:3.11-slim`, instala as dependências, copia o código e define
+  `pytest tests/test_harness.py -v` como comando de entrada (`CMD`). Roda com usuário sem privilégios.
+- `docker-compose.yml`: serviço `tests`; toda a suíte roda com um único comando:
+  `docker compose run --rm tests`.
+
+### 5.3 Critério de aceite da Fase 3
+- **Dado** um commit na `main` ou um PR aberto
+- **Quando** o pipeline de CI executar
+- **Então** os jobs `test` e `docker` terminam com 100% dos testes aprovados.
+
+---
+
+## 6. Histórico de versões
 
 | Versão | Mudança | Motivo |
 |--------|---------|--------|
@@ -145,3 +176,4 @@ sdd-task-analyzer/
 | 1.1 | Saída ganha `total_concluidas`, `total_pendentes`, `total_canceladas` e sufixo `_horas` em `tempo_medio_conclusao`; `quantidade_tarefas` passa a se chamar `total_tarefas` | Nomes exigidos pelo enunciado da Fase 2 |
 | 1.1 | Datas inconsistentes disparam exceção (fail-fast) em vez de "ignorar e reportar" | Cenário 2 da própria v1.0 exige disparar exceção |
 | 1.1 | Datas aceitas também como `str` ISO 8601 | A v1.0 já citava ISO 8601 |
+| 1.2 | Estrutura do repositório ampliada (`.github/`, `Dockerfile`, `docker-compose.yml`, `specs/system_design_document.pdf`, `specs/requirements.yaml`) e nova seção 5 | Exigência do enunciado da Fase 3. A mudança de estrutura foi aprovada pelo arquiteto humano, como exige o CONTEXT_RULES §2.3 |

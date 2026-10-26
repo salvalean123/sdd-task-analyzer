@@ -1,0 +1,81 @@
+# Requisitos executáveis do TaskAnalyzer.
+# Versão legível por máquina do contrato em specs/system_design_document.pdf
+# (fonte: specs/task_analyzer_spec.md). Cada requisito aponta para os testes
+# de tests/test_harness.py que o comprovam.
+
+projeto: sdd-task-analyzer
+modulo: src/task_analyzer.py
+versao_spec: "1.2"
+autor: Mateus Salvato
+
+interface:
+  funcao: "analyze_tasks(tarefas: list[dict[str, Any]]) -> TaskAnalysis"
+  excecao: "TaskValidationError(ValueError)"
+
+ambiente:
+  python: "3.11"
+  dependencias_runtime: []          # somente biblioteca padrão (CONTEXT_RULES §2.1)
+  dependencias_teste: [pytest]
+  imagem_docker: python:3.11-slim
+  ci: GitHub Actions (ubuntu-latest)
+
+entrada:
+  campos:
+    id_tarefa:      {tipo: int, obrigatorio: true, restricao: "inteiro > 0, único"}
+    titulo:         {tipo: str, obrigatorio: true, restricao: "não vazio"}
+    data_criacao:   {tipo: "datetime | str ISO 8601", obrigatorio: true}
+    data_inicio:    {tipo: "datetime | str ISO 8601", obrigatorio: false, padrao: data_criacao}
+    data_conclusao: {tipo: "datetime | str ISO 8601", obrigatorio: "quando status = concluida"}
+    prazo:          {tipo: "datetime | str ISO 8601", obrigatorio: true}
+    prioridade:     {tipo: enum, valores: [baixa, media, alta], obrigatorio: true}
+    status:         {tipo: enum, valores: [concluida, pendente, cancelada], obrigatorio: true}
+
+saida:
+  chaves:
+    - total_tarefas
+    - total_concluidas
+    - total_pendentes
+    - total_canceladas
+    - tempo_medio_conclusao_horas
+    - taxa_atraso_percentual
+    - sem_dados
+    - indicadores_por_prioridade
+
+regras_de_negocio:
+  - id: RN01
+    descricao: Só tarefas concluídas entram no tempo médio e na taxa de atraso.
+    testes: [test_borda_pendente_e_cancelada_nao_entram_em_media_nem_atraso]
+  - id: RN02
+    descricao: Tempo de conclusão = data_conclusao - data_inicio (ou data_criacao).
+    testes: [test_cenario1_tempo_medio_geral, test_cenario1_usa_data_inicio_quando_informada]
+  - id: RN03
+    descricao: Atraso quando data_conclusao > prazo.
+    testes: [test_cenario1_taxa_atraso_geral, test_borda_conclusao_exatamente_no_prazo_nao_e_atraso]
+  - id: RN04
+    descricao: Datas inconsistentes ou ausentes disparam TaskValidationError.
+    testes: [test_cenario2_data_conclusao_anterior_a_criacao_dispara_erro, test_cenario2_entradas_invalidas_disparam_task_validation_error]
+  - id: RN05
+    descricao: Sem divisão por zero; retorna 0.0 e sem_dados = true.
+    testes: [test_borda_lista_vazia_retorna_metricas_zeradas_sem_excecao, test_borda_prioridade_sem_concluidas_retorna_zero_sem_divisao_por_zero]
+  - id: RN06
+    descricao: Datas comparadas em UTC; datas sem fuso são UTC.
+    testes: [test_cenario1_aceita_datetime_e_converte_fusos_para_utc]
+  - id: RN07
+    descricao: Médias e percentuais com 2 casas decimais.
+    testes: [test_cenario1_arredonda_para_duas_casas]
+
+cenarios_de_aceite:
+  - id: CA01
+    nome: Sucesso (métricas corretas)
+    testes_prefixo: test_cenario1_
+  - id: CA02
+    nome: Exceção (entradas inválidas)
+    testes_prefixo: test_cenario2_
+  - id: CA03
+    nome: Casos de borda
+    testes_prefixo: test_borda_
+
+criterios_de_entrega:
+  pytest: "100% passed"
+  ci: "green build na main"
+  docker: "docker compose run --rm tests com 100% passed"
